@@ -254,7 +254,7 @@ button:focus-visible,.place:focus-visible{outline:4px solid var(--plum);outline-
 #v-close{background:var(--leaf);color:var(--paper);box-shadow:0 4px 0 var(--leaf-deep)}
 
 /* ---------- overlays ---------- */
-.caption{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);translate:-50% 8px;max-width:calc(100% - 32px);box-sizing:border-box;
+.caption{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 86px);translate:-50% -8px;max-width:calc(100% - 32px);box-sizing:border-box;
   background:var(--ink);color:var(--paper);padding:9px 18px;border-radius:18px;font-weight:800;font-size:17px;text-align:center;
   opacity:0;transition:opacity .25s,translate .25s;z-index:40;pointer-events:none}
 .caption.on{opacity:.92;translate:-50% 0}
@@ -335,8 +335,8 @@ button:focus-visible,.place:focus-visible{outline:4px solid var(--plum);outline-
   <div class="sheet-box" role="dialog" aria-label="Настройки голоса">
     <h2>Голос</h2>
     <div class="voice-list" id="voice-list"></div>
-    <label class="slider">Скорость<input type="range" id="v-rate" min="0.6" max="1.3" step="0.05"></label>
-    <label class="slider">Высота голоса<input type="range" id="v-pitch" min="0.6" max="1.8" step="0.05"></label>
+    <label class="slider">Скорость (для голоса телефона)<input type="range" id="v-rate" min="0.6" max="1.3" step="0.05"></label>
+    <label class="slider">Высота (для голоса телефона)<input type="range" id="v-pitch" min="0.6" max="1.8" step="0.05"></label>
     <p class="sheet-note">Голоса берутся из телефона. Чтобы появился голос получше:<br>
       iPhone: Настройки → Универсальный доступ → Устный контент → Голоса → Русский → скачать «Милена (улучшенный)».<br>
       Android: Настройки → Синтез речи (или «Преобразование текста в речь») → Синтезатор речи Google → Установить голосовые данные → Русский.<br>
@@ -393,9 +393,13 @@ const sfx = {
 };
 
 /* ======================= voice ======================= */
+// Recorded neural-voice clips live in v/<hash>.mp3, one per sentence; the build fills CLIPS.
+// A sentence without a clip falls back to the phone's own speech synthesis.
+const CLIPS = new Set(['0304eb7c','04e9defc','05de3335','05ed8017','05f4552f','062a1c4b','0673d043','06d7996a','06f463a7','086556f1','0869731e','0971b75a','098630c5','09dc4e49','0ae6069a','0c1afa20','0d55e934','0e52af77','0e8863ed','0f92bfb7','11a11ddb','131c3b4f','14bc03ec','14cd5906','152b0274','1569c2a3','16577a9d','19b8876e','1b370ddd','1baa5ecd','1e3dd0bc','1e63fdd8','1e904a04','1e967da3','1f1924a2','21fe475e','24707f85','24e52a82','26de98af','27945d53','2ab33c02','2b289810','2c18ff1b','2c3a1595','2c68e13c','2d4bcb20','2eddefae','2efcc043','3157af68','34192d24','3460bed0','34cb8f45','36335cfc','389260b8','3a5b0971','3abc7e5d','3b532ae6','3b9f4302','3c6bcfaf','3dbeed0b','3f91ca86','42fba63b','442a43c7','445821b8','465f8f2d','4742f4a1','48c30be1','49ffe639','4a887961','4af26222','4afc0e2a','4ce7bc3b','4d3aebdd','533eb31f','53ffa3dc','54ffc9aa','55c5708a','563a37a5','5bdbb9c6','5c77551d','5e031862','5e9ccd87','5f729222','5ffdd6f8','6103dcae','624bbf30','627a7257','62db6a67','6487988e','64c12d0b','65ea0e0e','66308a21','66b4f0af','66f93804','6777d911','68bb3df8','6a5631c1','6ababe82','6c30e0e7','6c66f886','6e3fbfbe','6f8a820f','6f9e32a8','70442418','70e96e7a','70f14bdf','7147cc32','731191bf','7662efe5','76a21f52','76d8b57b','7865e54b','795513db','796d9b07','79b86fb4','7a9b6e72','7b060aa8','7b614bea','7cb3a93f','7ee0111d','81264ce1','81cb0007','82e1c984','87f2bc44','8b8ed0f8','8c70f570','8d8157f6','8de05037','8f552050','9015dafb','9083e597','90909807','94362a57','95b88412','96b96a30','988a97b3','989e73e7','99a5bc74','99d3f1e3','9befe78b','9c0de046','9c5195ed','9f113009','9ffd83b9','a0f676fd','a1727166','a17c5fcb','a3595e6b','a3d1a0e3','a3de574c','a6d98391','ab300ed6','ac12ef07','ac756e16','ae670278','aede7d94','b0c038cd','b1790405','b1f29841','b29809bb','b3c1d6ec','b3d258a4','b3d71b1c','b4157d7a','b698fed5','b6ea1c44','b70739a7','b70ddc0d','b7da3095','b81895fa','b8f6cb75','baa926be','baafb2ba','bc60603f','be8380b1','c0740259','c15f6d20','c1daf8e7','c2658459','c3127818','c4b8377e','c4e10cf9','c54e6698','c57a4a23','c919f499','c96dc0a6','ca00666c','ca4204ec','cb84d8c6','cb87a6cb','cbaba57f','ccd813e0','cd531f86','cd9d7d4c','cf4c94dd','cf929ca5','d046f671','d1c5bf9a','d33d6fb7','d4231af8','d5827c2c','d62e4a10','d716a4d5','d71f5053','d7ecaf7c','d845ee26','d88f42dc','d985aebc','da76869a','daa4b2e3','db9c9190','dea5731f','dfaaa798','dfc88ce4','dffa63b6','e39ab309','e598176a','e5bad9ea','e62d11ed','e6ce2a71','e90afab1','e99c9795','ea6c4050','ea8d42ae','eb4e8523','edc81c9a','ef49a74d','efc4b978','efe4829d','f01ade75','f0e15a0b','f25532c0','f2b31665','f4d0e09a','f5253d7d','f5ad02bb','f61ade85','f6400286','f6f4ff62','f77b2fb4','f96e5cc9','f97c69ca','fe27122b','ff7d2773']);
 const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
 let voice = null, noRussian = false;
-const vset = Object.assign({ uri: null, rate: .9, pitch: 1.2 }, store.get('voice', {}));
+const vset = Object.assign({ mode: 'clips', uri: null, rate: .9, pitch: 1.2 }, store.get('voice', {}));
+const useClips = () => vset.mode !== 'device' && CLIPS.size > 0;
 const ruVoices = () => synth ? synth.getVoices().filter(v => /^ru/i.test(v.lang)) : [];
 function pickVoice() {
   if (!synth) return;
@@ -403,17 +407,49 @@ function pickVoice() {
   voice = (vset.uri && all.find(v => v.voiceURI === vset.uri)) ||
     ru.find(v => /milena|милена|alena|алена|алёна|katya|катя|irina|ирина|google/i.test(v.name)) || ru[0] || null;
   noRussian = all.length > 0 && !voice;
-  if (noRussian) $('#hint').textContent = 'На этом телефоне нет русского голоса, поэтому подсказки будут текстом внизу экрана. Голос можно добавить в настройках «Синтез речи».';
+  if (noRussian && !useClips()) $('#hint').textContent = 'На этом телефоне нет русского голоса, поэтому подсказки будут текстом. Голос можно добавить в настройках «Синтез речи».';
 }
 if (synth) { pickVoice(); if (synth.addEventListener) synth.addEventListener('voiceschanged', pickVoice); else synth.onvoiceschanged = pickVoice; }
+
+const sentences = t => (String(t).match(/[^.!?]+[.!?]*/g) || []).map(s => s.trim()).filter(Boolean);
+const vkey = s => s.trim().replace(/[.!]+$/, '').toLowerCase();
+const vhash = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16).padStart(8, '0'); };
+
 let capTimer;
 function caption(text) {
   const c = $('#caption'); c.textContent = text; c.classList.add('on');
   clearTimeout(capTimer); capTimer = setTimeout(() => c.classList.remove('on'), 2400 + text.length * 45);
 }
-function say(text) {
-  caption(text);
-  if (!synth || noRussian) return sleep(700 + text.length * 55);
+
+const clipCache = new Map();
+function loadClip(h) {
+  if (!clipCache.has(h)) {
+    clipCache.set(h, fetch('v/' + h + '.mp3')
+      .then(r => r.ok ? r.arrayBuffer() : Promise.reject(r.status))
+      .then(b => new Promise((res, rej) => { const a = audio(); if (!a) return rej(); a.decodeAudioData(b, res, rej); }))
+      .catch(() => null));
+  }
+  return clipCache.get(h);
+}
+let sayToken = 0, curSrc = null, curDone = null;
+function stopVoice() {
+  if (curSrc) { try { curSrc.onended = null; curSrc.stop(); } catch (e) {} curSrc = null; }
+  if (curDone) { const d = curDone; curDone = null; d(); }
+  if (synth && (synth.speaking || synth.pending)) synth.cancel();
+}
+function playBuf(buf) {
+  return new Promise(res => {
+    const a = audio(); if (!a) return res();
+    const src = a.createBufferSource(); src.buffer = buf; src.connect(a.destination);
+    let done = false;
+    const fin = () => { if (done) return; done = true; if (curSrc === src) curSrc = null; if (curDone === fin) curDone = null; res(); };
+    src.onended = fin; curSrc = src; curDone = fin;
+    src.start();
+    setTimeout(fin, buf.duration * 1000 + 400);
+  });
+}
+function speakTTS(text) {
+  if (!synth || noRussian) { caption(text); return sleep(700 + text.length * 55); }
   return new Promise(res => {
     let done = false; const fin = () => { if (!done) { done = true; res(); } };
     const u = new SpeechSynthesisUtterance(text);
@@ -423,6 +459,21 @@ function say(text) {
     if (synth.speaking || synth.pending) { synth.cancel(); setTimeout(go, 60); } else go();
     setTimeout(fin, 1200 + text.length * 110);
   });
+}
+function say(text) {
+  const token = ++sayToken;
+  stopVoice();
+  if (!useClips()) return speakTTS(text);
+  const parts = sentences(text);
+  const loads = parts.map(p => { const h = vhash(vkey(p)); return CLIPS.has(h) ? loadClip(h) : Promise.resolve(null); });
+  return (async () => {
+    for (let i = 0; i < parts.length; i++) {
+      const buf = await loads[i];
+      if (token !== sayToken) return;
+      if (buf) await playBuf(buf); else await speakTTS(parts[i]);
+      if (token !== sayToken) return;
+    }
+  })();
 }
 
 /* ======================= confetti ======================= */
@@ -606,8 +657,8 @@ function renderDress(bump) {
   const tabs = $('#tabs'); tabs.innerHTML = '';
   for (const k in WARDROBE) {
     const b = el('button', 'tab'); b.textContent = WARDROBE[k].icon;
-    b.setAttribute('aria-pressed', k === tab); b.setAttribute('aria-label', { hat: 'Шапки', top: 'Кофты и платья', bottom: 'Штаны и юбки', shoes: 'Обувь' }[k]);
-    b.addEventListener('click', () => { tab = k; sfx.tap(); renderDress(); say({ hat: 'Шапки', top: 'Кофты и платья', bottom: 'Штаны и юбки', shoes: 'Обувь' }[k]); });
+    b.setAttribute('aria-pressed', k === tab); b.setAttribute('aria-label', TAB_NAMES[k]);
+    b.addEventListener('click', () => { tab = k; sfx.tap(); renderDress(); say(TAB_NAMES[k]); });
     tabs.appendChild(b);
   }
   const opts = $('#opts'); opts.innerHTML = '';
@@ -777,26 +828,69 @@ const HUBS = {
   dance: { title: 'Танцы', npc: '💃', hello: n => `${n}, будем танцевать!`, acts: ['dance'] },
   boxing: { title: 'Бокс', npc: '🧔', hello: n => `${n}, надевай перчатки! Будем тренироваться.`, acts: ['boxing'] }
 };
+const ASK = it => `Где ${it[1]}?`;
+const PRAISE_IT = (it, p) => `${p} Это ${it[1]}!`;
+const COUNT_INTRO = 'Сколько тут? Посчитай!';
+const TAB_NAMES = { hat: 'Шапки', top: 'Кофты и платья', bottom: 'Штаны и юбки', shoes: 'Обувь' };
+const FARM = [['🐮', 'Коровка', 'Му-у-у!'], ['🐶', 'Собачка', 'Гав-гав!'], ['🐱', 'Котик', 'Мяу-мяу!'], ['🐐', 'Козочка', 'Ме-е-е!'],
+  ['🦆', 'Уточка', 'Кря-кря!'], ['🐸', 'Лягушка', 'Ква-ква!'], ['🐓', 'Петушок', 'Ку-ка-ре-ку!'], ['🐑', 'Овечка', 'Бе-е-е!'],
+  ['🐴', 'Лошадка', 'И-го-го!'], ['🐔', 'Курочка', 'Ко-ко-ко!'], ['🐫', 'Верблюд', 'Мо-о-о!'], ['🐭', 'Мышка', 'Пи-пи-пи!']];
 const ACTS = {
-  table: { name: 'Накрой на стол', ic: '🍽️', run: s => startFind(s, { cats: [{ k: 'x', w: 1, items: [['🍽️', 'тарелка'], ['🥄', 'ложка'], ['🍴', 'вилка'], ['☕', 'чашка'], ['🍞', 'хлеб'], ['🥛', 'молоко'], ['🍯', 'мёд'], ['🧀', 'сыр']] }],
-    ask: it => `Где ${it[1]}?`, intro: 'Мама накрывает на стол. Помоги!' }) },
-  toys: { name: 'Убери игрушки', ic: '🧸', run: s => startCollect(s, { items: ['🧸', '🚗', '⚽', '🎲', '🦖', '🎈', '🧩', '🚂'], bin: '📦', intro: 'Убери игрушки в коробку!', done: 'Все игрушки на месте! Папа доволен!' }) },
-  shop: { name: 'Купи по списку', ic: '🛒', run: s => startFind(s, { cats: [{ k: 'x', w: 1, items: [['🍎', 'яблоко', 'яблоко'], ['🍌', 'банан', 'банан'], ['🥛', 'молоко', 'молоко'], ['🍞', 'хлеб', 'хлеб'], ['🥕', 'морковка', 'морковку'], ['🍉', 'арбуз', 'арбуз'], ['🧀', 'сыр', 'сыр'], ['🥚', 'яйца', 'яйца'], ['🍬', 'конфета', 'конфету']] }],
-    ask: it => `Купи ${it[2]}!`, praise: it => `${pick(PRAISE)} ${it[1][0].toUpperCase() + it[1].slice(1)} в корзинку!` }) },
-  voices: { name: 'Кто как говорит', ic: '🐮', run: s => startVoices(s) },
-  eggs: { name: 'Собери яйца', ic: '🥚', run: s => startCollect(s, { items: ['🥚'], bin: '🧺', intro: 'Курочка снесла яйца. Собери их в корзинку!', done: 'Все яйца в корзинке! Апашка говорит: рахмет!' }) },
-  baursak: { name: 'Баурсаки', ic: '🍪', run: s => startCount(s, { things: ['baursak'], prompt: 'Сколько баурсаков?', intro: 'Апашка испекла баурсаки. Сколько баурсаков? Посчитай!' }) },
-  garden: { name: 'Базар', ic: '🍉', run: s => startFind(s, { intro: 'Мы на базаре!', cats: [{ k: 'x', w: 1, items: [['🍎', 'яблоко'], ['🍐', 'груша'], ['🍒', 'вишня'], ['🍓', 'клубника'], ['🍇', 'виноград'], ['🥕', 'морковка'], ['🥒', 'огурец'], ['🍅', 'помидор'], ['🍉', 'арбуз'], ['🍈', 'дыня']] }] }) },
-  bag: { name: 'Собери портфель', ic: '🎒', run: s => startCollect(s, { items: ['✏️', '📕', '📏', '🖍️', '📒', '✂️'], bin: '🎒', intro: 'Собери портфель!', done: 'Портфель собран! Можно на урок!' }) },
-  shapes: { name: 'Фигуры', ic: '🔺', run: s => startFind(s, { intro: 'Урок начинается!', cats: [{ k: 'shapes', w: 1, items: [['circle', 'круг'], ['square', 'квадрат'], ['triangle', 'треугольник'], ['star', 'звёздочка'], ['heart', 'сердечко'], ['oval', 'овал']] }] }) },
-  colors: { name: 'Цвета', ic: '🎨', run: s => startFind(s, { cats: [{ k: 'colors', w: 1, items: [['#F0453A', 'красный'], ['#FFC21A', 'жёлтый'], ['#3DBB4E', 'зелёный'], ['#2F7DF0', 'синий'], ['#FF8A1F', 'оранжевый'], ['#9B5CF6', 'фиолетовый'], ['#FF6FB1', 'розовый'], ['#8B5A3C', 'коричневый'], ['#22252B', 'чёрный'], ['#FFFFFF', 'белый']] }],
-    ask: it => `Где ${it[1]} кружок?` }) },
-  numbers: { name: 'Цифры', ic: '🔢', run: s => startCount(s, { things: ['🍎', '🐥', '⭐', '🎈', '🐞', '🍓', '🚗', '🌸', '🐟', '🦋', '🐢'] }) },
-  balloons: { name: 'Шарики', ic: '🎈', run: s => startBalloons(s) },
-  balls: { name: 'Собери мячики', ic: '⚽', run: s => startCollect(s, { items: ['⚽', '🏀', '🎾', '🏐'], bin: '🧺', intro: 'Мячики раскатились. Собери их!', done: 'Все мячики собраны! Молодец!' }) },
-  dance: { name: 'Танцуем!', ic: '🎵', run: s => startDance(s) },
-  boxing: { name: 'Тренировка', ic: '🥊', run: s => startBoxing(s) }
+  table: { name: 'Накрой на стол', ic: '🍽️', type: 'find', opts: { intro: 'Апашка накрывает на стол. Помоги!',
+    cats: [{ k: 'x', w: 1, items: [['🍽️', 'тарелка'], ['🥄', 'ложка'], ['🍴', 'вилка'], ['☕', 'чашка'], ['🍞', 'хлеб'], ['🥛', 'молоко'], ['🍯', 'мёд'], ['🧀', 'сыр']] }] } },
+  toys: { name: 'Убери игрушки', ic: '🧸', type: 'collect', opts: { items: ['🧸', '🚗', '⚽', '🎲', '🦖', '🎈', '🧩', '🚂'], bin: '📦', intro: 'Убери игрушки в коробку!', done: 'Все игрушки на месте! Апашка довольна!' } },
+  shop: { name: 'Купи по списку', ic: '🛒', type: 'find', opts: {
+    cats: [{ k: 'x', w: 1, items: [['🍎', 'яблоко', 'яблоко'], ['🍌', 'банан', 'банан'], ['🥛', 'молоко', 'молоко'], ['🍞', 'хлеб', 'хлеб'], ['🥕', 'морковка', 'морковку'], ['🍉', 'арбуз', 'арбуз'], ['🧀', 'сыр', 'сыр'], ['🥚', 'яйца', 'яйца'], ['🍬', 'конфета', 'конфету']] }],
+    ask: it => `Купи ${it[2]}!`, praise: (it, p) => `${p} ${it[1][0].toUpperCase() + it[1].slice(1)} в корзинку!` } },
+  voices: { name: 'Кто как говорит', ic: '🐮', type: 'voices' },
+  eggs: { name: 'Собери яйца', ic: '🥚', type: 'collect', opts: { items: ['🥚'], bin: '🧺', intro: 'Курочка снесла яйца. Собери их в корзинку!', done: 'Все яйца в корзинке! Апашка говорит: рахмет!' } },
+  baursak: { name: 'Баурсаки', ic: '🍪', type: 'count', opts: { things: ['baursak'], prompt: 'Сколько баурсаков?', intro: 'Апашка испекла баурсаки. Сколько баурсаков? Посчитай!' } },
+  garden: { name: 'Базар', ic: '🍉', type: 'find', opts: { intro: 'Мы на базаре!',
+    cats: [{ k: 'x', w: 1, items: [['🍎', 'яблоко'], ['🍐', 'груша'], ['🍒', 'вишня'], ['🍓', 'клубника'], ['🍇', 'виноград'], ['🥕', 'морковка'], ['🥒', 'огурец'], ['🍅', 'помидор'], ['🍉', 'арбуз'], ['🍈', 'дыня']] }] } },
+  bag: { name: 'Собери портфель', ic: '🎒', type: 'collect', opts: { items: ['✏️', '📕', '📏', '🖍️', '📒', '✂️'], bin: '🎒', intro: 'Собери портфель!', done: 'Портфель собран! Можно на урок!' } },
+  shapes: { name: 'Фигуры', ic: '🔺', type: 'find', opts: { intro: 'Урок начинается!',
+    cats: [{ k: 'shapes', w: 1, items: [['circle', 'круг'], ['square', 'квадрат'], ['triangle', 'треугольник'], ['star', 'звёздочка'], ['heart', 'сердечко'], ['oval', 'овал']] }] } },
+  colors: { name: 'Цвета', ic: '🎨', type: 'find', opts: { ask: it => `Где ${it[1]} кружок?`,
+    cats: [{ k: 'colors', w: 1, items: [['#F0453A', 'красный'], ['#FFC21A', 'жёлтый'], ['#3DBB4E', 'зелёный'], ['#2F7DF0', 'синий'], ['#FF8A1F', 'оранжевый'], ['#9B5CF6', 'фиолетовый'], ['#FF6FB1', 'розовый'], ['#8B5A3C', 'коричневый'], ['#22252B', 'чёрный'], ['#FFFFFF', 'белый']] }] } },
+  numbers: { name: 'Цифры', ic: '🔢', type: 'count', opts: { things: ['🍎', '🐥', '⭐', '🎈', '🐞', '🍓', '🚗', '🌸', '🐟', '🦋', '🐢'] } },
+  balloons: { name: 'Шарики', ic: '🎈', type: 'balloons' },
+  balls: { name: 'Собери мячики', ic: '⚽', type: 'collect', opts: { items: ['⚽', '🏀', '🎾', '🏐'], bin: '🧺', intro: 'Мячики раскатились. Собери их!', done: 'Все мячики собраны! Молодец!' } },
+  dance: { name: 'Танцуем!', ic: '🎵', type: 'dance' },
+  boxing: { name: 'Тренировка', ic: '🥊', type: 'boxing' }
 };
+
+// Every sentence the game can say, for pre-recording the voice clips.
+function allPhrases() {
+  const map = new Map();
+  const add = t => sentences(t).forEach(s => { const k = vkey(s), prev = map.get(k); if (!prev || (!/!$/.test(prev) && /!$/.test(s))) map.set(k, s); });
+  for (const k in KIDS) {
+    const n = KIDS[k].name;
+    add(`Привет, ${n}! Выбери одежду!`); add(`${n}, выбери одежду!`); add(`Куда пойдём, ${n}?`); add(`Привет, ${n}! Куда пойдём?`);
+    for (const h in HUBS) add(HUBS[h].hello(n));
+  }
+  add('Кто играет?'); add('Что ещё поделаем?'); add('Привет! Я буду играть с тобой.');
+  Object.values(TAB_NAMES).forEach(add);
+  for (const c in WARDROBE) for (const id in WARDROBE[c].items) { const v = WARDROBE[c].items[id]; add((typeof v === 'string' ? v : v[0]) + '!'); }
+  for (const p in PLACES) add(PLACES[p].go);
+  PRAISE.forEach(add);
+  for (let i = 1; i < NUMS.length; i++) { add(NUMS[i] + '!'); add(`Всего ${NUMS[i].toLowerCase()}!`); }
+  for (const a of Object.values(ACTS)) {
+    const o = a.opts || {};
+    if (a.type === 'find') {
+      const ask = o.ask || ASK, praise = o.praise || PRAISE_IT;
+      if (o.intro) add(o.intro);
+      o.cats.forEach(c => c.items.forEach(it => { add(ask(it)); add(praise(it, '')); add(`Это ${it[1]}.`); }));
+    }
+    if (a.type === 'count') { add(o.intro || COUNT_INTRO); add(o.prompt || 'Сколько тут?'); add('Правильно!'); add('Давай посчитаем вместе!'); }
+    if (a.type === 'collect') { add(o.intro); add(o.done); }
+  }
+  BALLOONS.forEach(b => add(b.n + '!')); add('Лопай шарики!'); add('Ура! Звёздочка!');
+  FARM.forEach(([, n, s]) => add(`${n} говорит: ${s}`)); add('Нажми на зверушку!'); add('Кто как говорит?'); add('Все зверушки спели! Ура!');
+  add('Музыка! Нажимай на кнопку, которая светится!'); add('Нажимай, где светится!'); add('Супер танец!');
+  add('Бей по красной лапе! Раз, два!'); add('Бей по лапе!'); add('Десять! Ты чемпион!');
+  return [...map].map(([k, text]) => ({ h: vhash(k), text }));
+}
+window.__allPhrases = allPhrases;
 
 let place = null, stopGame = null;
 function setPill(text, withRepeat) {
@@ -830,7 +924,7 @@ function startAct(a) {
   if (stopGame) stopGame();
   const stage = $('#stage'); stage.innerHTML = '';
   setPill(ACTS[a].name, false);
-  stopGame = ACTS[a].run(stage);
+  stopGame = GAMES[ACTS[a].type](stage, ACTS[a].opts || {});
 }
 function back() {
   sfx.tap();
@@ -891,7 +985,7 @@ const SHAPES = {
   heart: '<path d="M50 88 C20 66 6 50 6 32 A22 22 0 0 1 50 22 A22 22 0 0 1 94 32 C94 50 80 66 50 88Z" fill="#FF6FB1"/>',
   oval: '<ellipse cx="50" cy="50" rx="44" ry="28" fill="#9B5CF6"/>'
 };
-function startFind(stage, { cats, ask = it => `Где ${it[1]}?`, praise = it => `${pick(PRAISE)} Это ${it[1]}!`, intro = '' }) {
+function startFind(stage, { cats, ask = ASK, praise = PRAISE_IT, intro = '' }) {
   let alive = true, busy = false, choices = 2, streak = 0, target = null, cat = null, lastName = '';
   const wrap = el('div', 'cards'); stage.appendChild(wrap);
   const weighted = arr => { let r = Math.random() * arr.reduce((s, a) => s + a.w, 0); for (const a of arr) if ((r -= a.w) < 0) return a; return arr[0]; };
@@ -920,7 +1014,7 @@ function startFind(stage, { cats, ask = it => `Где ${it[1]}?`, praise = it =>
       busy = true; streak++;
       sfx.ding(); b.classList.add('yes'); confettiAt(b); addStar(b);
       [...wrap.children].forEach(c => { if (c !== b) c.classList.add('dim'); });
-      await say(praise(it));
+      await say(praise(it, pick(PRAISE)));
       if (!alive) return;
       if (streak >= 3 && choices < 4) { choices++; streak = 0; }
       await sleep(250); round();
@@ -933,7 +1027,7 @@ function startFind(stage, { cats, ask = it => `Где ${it[1]}?`, praise = it =>
   return () => { alive = false; };
 }
 
-function startCount(stage, { things, prompt = 'Сколько тут?', intro = 'Сколько тут? Посчитай!' }) {
+function startCount(stage, { things, prompt = 'Сколько тут?', intro = COUNT_INTRO }) {
   let alive = true, busy = false, n = 0, counted = 0;
   const box = el('div', 'count'), tray = el('div', 'tray'), answers = el('div', 'answers');
   box.append(tray, answers); stage.appendChild(box);
@@ -1038,19 +1132,16 @@ function startCollect(stage, { items, bin, intro, done }) {
 
 function startVoices(stage) {
   let alive = true; const heard = new Set();
-  const VOICES = [['🐮', 'Коровка', 'Му-у-у!'], ['🐶', 'Собачка', 'Гав-гав!'], ['🐱', 'Котик', 'Мяу-мяу!'], ['🐐', 'Козочка', 'Ме-е-е!'],
-    ['🦆', 'Уточка', 'Кря-кря!'], ['🐸', 'Лягушка', 'Ква-ква!'], ['🐓', 'Петушок', 'Ку-ка-ре-ку!'], ['🐑', 'Овечка', 'Бе-е-е!'],
-    ['🐴', 'Лошадка', 'И-го-го!'], ['🐔', 'Курочка', 'Ко-ко-ко!'], ['🐫', 'Верблюд', 'Мо-о-о!'], ['🐭', 'Мышка', 'Пи-пи-пи!']];
   const grid = el('div', 'voices'); stage.appendChild(grid);
   setPrompt('Кто как говорит?'); say('Нажми на зверушку!');
-  VOICES.forEach(([e, name, sound], i) => {
+  FARM.forEach(([e, name, sound], i) => {
     const b = el('button', 'animal'); b.textContent = e; b.setAttribute('aria-label', name);
     b.addEventListener('click', () => {
       if (!alive) return;
       restart(b, 'jump'); sfx.tap(); say(`${name} говорит: ${sound}`);
       if (heard.has(i)) return;
       heard.add(i); b.classList.add('heard');
-      if (heard.size === VOICES.length) setTimeout(() => {
+      if (heard.size === FARM.length) setTimeout(() => {
         if (!alive) return;
         addStar(b); confettiAt(grid); say('Все зверушки спели! Ура!');
         heard.clear(); grid.querySelectorAll('.heard').forEach(x => x.classList.remove('heard'));
@@ -1135,6 +1226,8 @@ function startBoxing(stage) {
   return () => { alive = false; clearTimeout(upTimer); };
 }
 
+const GAMES = { find: startFind, count: startCount, collect: startCollect, voices: startVoices, balloons: startBalloons, dance: startDance, boxing: startBoxing };
+
 /* ======================= wiring ======================= */
 async function keepAwake() { try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch (e) {} }
 
@@ -1173,21 +1266,20 @@ function boot(data) {
   const sheet = $('#voice-sheet'), rate = $('#v-rate'), pitch = $('#v-pitch');
   function renderVoiceList() {
     const list = $('#voice-list'); list.innerHTML = '';
-    const ru = ruVoices();
-    if (!synth) { list.textContent = 'Этот браузер не умеет говорить, поэтому подсказки будут текстом.'; return; }
-    if (!ru.length) { list.textContent = 'Русских голосов на телефоне пока нет. Как их добавить, написано ниже.'; return; }
-    ru.forEach(v => {
+    const option = (title, note, pressed, onPick) => {
       const b = el('button', 'vbtn'), sm = el('small');
-      b.textContent = v.name;
-      sm.textContent = v.localService ? 'Работает без интернета' : 'Нужен интернет';
-      b.appendChild(sm);
-      b.setAttribute('aria-pressed', !!voice && voice.voiceURI === v.voiceURI);
-      b.addEventListener('click', () => {
-        vset.uri = v.voiceURI; store.set('voice', vset); voice = v; noRussian = false;
-        renderVoiceList(); say('Привет! Я буду играть с тобой.');
-      });
+      b.textContent = title; sm.textContent = note; b.appendChild(sm);
+      b.setAttribute('aria-pressed', pressed);
+      b.addEventListener('click', () => { onPick(); store.set('voice', vset); renderVoiceList(); say('Привет! Я буду играть с тобой.'); });
       list.appendChild(b);
-    });
+    };
+    if (CLIPS.size) option('Светлана, голос игры', 'Живой голос, записан заранее. Звучит лучше всего', vset.mode !== 'device', () => { vset.mode = 'clips'; });
+    const ru = ruVoices();
+    if (!synth) { if (!CLIPS.size) list.textContent = 'Этот браузер не умеет говорить, поэтому подсказки будут текстом.'; return; }
+    if (!ru.length) { const p = el('p', 'sheet-note'); p.textContent = 'Русских голосов на самом телефоне нет. Как их добавить, написано ниже.'; list.appendChild(p); return; }
+    ru.forEach(v => option(v.name, 'Голос телефона' + (v.localService ? ', работает без интернета' : ', нужен интернет'),
+      (vset.mode === 'device' || !CLIPS.size) && !!voice && voice.voiceURI === v.voiceURI,
+      () => { vset.mode = 'device'; vset.uri = v.voiceURI; voice = v; noRussian = false; }));
   }
   $('#voice-btn').addEventListener('click', () => {
     audio(); pickVoice(); renderVoiceList();
@@ -1211,5 +1303,6 @@ window.claude?.hot?.snapshot?.(() => ({ stars }));
 window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
 })();
 </script>
+
 </body>
 </html>
