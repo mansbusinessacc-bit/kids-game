@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Айсберг клиента</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: слева сцена-айсберг (верхушка над ватерлинией, пять слоёв под водой расширяются вглубь), справа пульт ведущего: ход, таймер, счёт. */
+:root{
+  --bg:#E9F0F3; --surface:#F7FAFB; --ink:#0D2433; --muted:#4D6B7C; --line:#C5D4DB;
+  --ice:#FFFFFF; --ice-ink:#0D2433; --ice-muted:#4D6B7C;
+  --sea-top:#1B6A86; --sea-bot:#082638; --sea-ink:#E9F5F8; --sea-muted:#A9CDD9;
+  --slab:rgba(255,255,255,.13); --slab-line:rgba(255,255,255,.38);
+  --buoy:#D9500A; --buoy-ink:#FFFFFF; --good:#17754C; --bad:#B8322A;
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#07141D; --surface:#0E2230; --ink:#E4EEF2; --muted:#8CA8B5; --line:#234152;
+  --ice:#DDEAF0; --ice-ink:#0D2433; --ice-muted:#3F5D6E;
+  --sea-top:#114B62; --sea-bot:#030F18; --sea-ink:#E9F5F8; --sea-muted:#9CC3D1;
+  --slab:rgba(255,255,255,.09); --slab-line:rgba(255,255,255,.3);
+  --buoy:#FF7A2E; --buoy-ink:#1A0D04; --good:#4CC38A; --bad:#F0716A; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#07141D; --surface:#0E2230; --ink:#E4EEF2; --muted:#8CA8B5; --line:#234152;
+  --ice:#DDEAF0; --ice-ink:#0D2433; --ice-muted:#3F5D6E;
+  --sea-top:#114B62; --sea-bot:#030F18; --sea-ink:#E9F5F8; --sea-muted:#9CC3D1;
+  --slab:rgba(255,255,255,.09); --slab-line:rgba(255,255,255,.3);
+  --buoy:#FF7A2E; --buoy-ink:#1A0D04; --good:#4CC38A; --bad:#F0716A; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:20px 56px;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3,p,blockquote,ol,ul{margin:0}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--buoy);outline-offset:2px}
+
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}
+.top h1{font-family:var(--display);font-weight:700;font-size:clamp(20px,3vw,28px);letter-spacing:-.01em}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px}
+.tabs button{border:0;background:transparent;padding:8px 16px;border-radius:999px;font-weight:500;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;display:flex;gap:10px;align-items:baseline;font-weight:500}
+.chip small{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed="true"] small{color:inherit;opacity:.75}
+
+.game{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+@media (max-width:900px){.game{grid-template-columns:minmax(0,1fr)}}
+
+/* сцена */
+.stage{border-radius:14px;overflow:hidden;border:1px solid var(--line);min-width:0}
+.sky{background:var(--bg);padding:28px 16px 0;display:flex;justify-content:center}
+.tip{background:var(--ice);color:var(--ice-ink);width:58%;padding:26px 7% 22px;clip-path:polygon(9% 0,91% 0,100% 100%,0 100%);display:flex;flex-direction:column;gap:8px;text-align:center}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ice-muted)}
+.tip h2{font-family:var(--display);font-weight:700;font-size:clamp(24px,4vw,38px);line-height:1.1}
+.tip .meta{color:var(--ice-muted);font-size:15px}
+.tip blockquote{font-size:clamp(17px,2.1vw,21px);font-weight:500;line-height:1.35;text-wrap:balance;margin-top:6px}
+.waterline{background:var(--sea-top);border-top:3px dashed var(--buoy);padding:6px 16px 0;text-align:center}
+.waterline span{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--sea-muted)}
+.sea{background:linear-gradient(var(--sea-top),var(--sea-bot));padding:10px 16px 28px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.layer{width:var(--w);clip-path:polygon(4.5% 0,95.5% 0,100% 100%,0 100%);padding:16px 8%;border:0;text-align:left;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;align-items:center;min-height:76px}
+.layer.covered{background:var(--slab);color:var(--sea-ink);box-shadow:inset 0 1px 0 var(--slab-line)}
+button.layer.covered:hover{background:var(--slab-line)}
+button.layer:focus-visible{outline:0;box-shadow:inset 0 0 0 3px var(--buoy)}
+.layer.locked{opacity:.55;cursor:not-allowed}
+.layer.open{background:var(--ice);color:var(--ice-ink)}
+.layer.missed{background:var(--slab);color:var(--sea-ink);box-shadow:inset 0 0 0 1px var(--slab-line)}
+.l-name{font-family:var(--display);font-weight:500;font-size:clamp(14px,1.7vw,17px)}
+.l-sub{grid-column:1;font-size:13px;color:var(--sea-muted)}
+.l-pts{grid-row:1/span 2;grid-column:2;font-family:var(--mono);font-weight:700;font-size:22px}
+.layer.open .l-pts,.layer.missed .l-pts{grid-row:1;font-size:16px}
+.l-say{grid-column:1/-1;font-size:clamp(15px,1.7vw,18px);line-height:1.4}
+.l-tag{grid-column:1/-1;font-family:var(--mono);font-size:12px;letter-spacing:.04em}
+.layer.open .l-tag{color:var(--good);filter:brightness(.8)}
+.layer.missed .l-tag{color:var(--sea-muted)}
+.l-ask{grid-column:1/-1;font-size:14px;border-top:1px solid currentColor;padding-top:8px;margin-top:4px;opacity:.85}
+.l-ask b{font-weight:600}
+@media (max-width:640px){
+  .tip{width:100%;clip-path:none;border-radius:10px 10px 0 0;padding-inline:18px}
+  .layer{width:100%;clip-path:none;border-radius:8px;padding-inline:16px}
+}
+
+/* пульт */
+.rail{display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.turn{background:var(--buoy);color:var(--buoy-ink);border-color:var(--buoy)}
+.turn .label{color:inherit;opacity:.85}
+.turn strong{font-family:var(--display);font-weight:700;font-size:22px;line-height:1.15;overflow-wrap:anywhere}
+.turn p{font-size:14px}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;font-weight:500;text-align:left;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.btn:hover{border-color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn .n{font-family:var(--mono);font-weight:700}
+.btn.pen .n{color:var(--bad)}
+.btn.main{background:var(--ink);color:var(--bg);border-color:var(--ink);justify-content:center}
+.btn.ghost{background:transparent;justify-content:center;color:var(--muted)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1 1 auto}
+.timer{font-family:var(--mono);font-weight:700;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+.timer.out{color:var(--bad)}
+.teams{display:flex;flex-direction:column;gap:8px}
+.team{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:10px;align-items:center}
+.dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--line)}
+.team.on .dot{background:var(--buoy);border-color:var(--buoy)}
+.team input{width:100%;min-width:0;border:1px solid transparent;background:transparent;border-radius:8px;padding:6px 8px;font-weight:500}
+.team input:hover,.team input:focus{border-color:var(--line);background:var(--bg)}
+.team output{font-family:var(--mono);font-weight:700;font-size:24px;font-variant-numeric:tabular-nums;min-width:2ch;text-align:right}
+.note{font-size:13px;color:var(--muted)}
+.best{border-color:var(--buoy)}
+.best .btn[aria-pressed="true"]{background:var(--buoy);color:var(--buoy-ink);border-color:var(--buoy)}
+
+/* карточка клиента и правила */
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,3vw,32px);display:flex;flex-direction:column;gap:18px;max-width:760px}
+.sheet h2{font-family:var(--display);font-weight:700;font-size:clamp(20px,3vw,28px);text-wrap:balance}
+.sheet h3{font-family:var(--display);font-weight:500;font-size:15px}
+.sheet ol,.sheet ul{padding-left:1.2em;display:flex;flex-direction:column;gap:8px}
+.sheet li{max-width:65ch}
+.quote{border-left:3px solid var(--buoy);padding:4px 0 4px 14px;font-size:18px;font-weight:500}
+.card-layer{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:6px}
+.card-layer .hd{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.card-layer .hd span{font-family:var(--mono);font-weight:700}
+.card-layer .hit{font-size:14px;color:var(--muted)}
+table{border-collapse:collapse;width:100%}
+td,th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+td:last-child,th:last-child{text-align:right;font-family:var(--mono);font-weight:700;white-space:nowrap}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.tablebox{overflow-x:auto}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Айсберг клиента</h1>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-game" data-tab="game" aria-selected="true">Игра</button>
+      <button role="tab" id="tab-client" data-tab="client" aria-selected="false">Карточка клиента</button>
+      <button role="tab" id="tab-rules" data-tab="rules" aria-selected="false">Правила</button>
+    </div>
+  </header>
+
+  <section id="view-game">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="chips" id="clientChips"></div>
+      <div class="game">
+        <div class="stage" id="stage"></div>
+        <aside class="rail" id="rail"></aside>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-client" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="chips" id="cardChips"></div>
+      <div class="sheet" id="card"></div>
+    </div>
+  </section>
+
+  <section id="view-rules" hidden>
+    <div class="sheet">
+      <h2>Как играть на планёрке</h2>
+      <p style="max-width:65ch">Клиент показывает менеджеру только верхушку: «сколько стоит», «я подумаю», «скиньте на WhatsApp». Настоящая причина покупки лежит под водой. Задача команд: вопросами вскрыть все пять слоёв раньше соперников.</p>
+      <ol>
+        <li>Один человек играет клиента. Он открывает эту страницу на своём телефоне, вкладка «Карточка клиента», и никому не показывает экран. Остальные делятся на команды.</li>
+        <li>Этот экран выводится на общий монитор, его ведёт руководитель отдела.</li>
+        <li>Команды по очереди задают клиенту один вопрос. Клиент отвечает честно, но только на то, о чём спросили.</li>
+        <li>Если вопрос попал в слой, клиент говорит «Вскрыто» и называет слой. Ведущий нажимает этот слой на экране, команда получает очки, ход переходит дальше.</li>
+        <li>«Последствия» и «Истинный мотив» открываются только после «Проблемы». Сначала найдите, что болит.</li>
+        <li>Когда время вышло или все слои открыты, ведущий жмёт «Разбор». На экране появляются невскрытые слои и вопросы, которые к ним вели.</li>
+        <li>Финал раунда: каждая команда за 30 секунд пересказывает клиенту, что услышала, и делает предложение, опираясь только на вскрытое. Например, сопровождение до первого выигранного тендера как ответ на страх остаться с уроками один на один. Клиент выбирает лучшее резюме.</li>
+      </ol>
+      <div class="tablebox"><table>
+        <tr><th>Что произошло</th><th>Очки</th></tr>
+        <tr><td>Вскрыли «Ситуацию»</td><td>+1</td></tr>
+        <tr><td>Вскрыли «Проблему»</td><td>+2</td></tr>
+        <tr><td>Вскрыли «Последствия»</td><td>+3</td></tr>
+        <tr><td>Вскрыли «Истинный мотив»</td><td>+4</td></tr>
+        <tr><td>Вскрыли «Скрытое возражение»</td><td>+3</td></tr>
+        <tr><td>Лучшее резюме и предложение в конце раунда</td><td>+3</td></tr>
+        <tr><td>Закрытый вопрос, на который отвечают «да» или «нет»</td><td>−1</td></tr>
+        <tr><td>Начали рассказывать про курс вместо вопроса</td><td>−2</td></tr>
+      </table></div>
+      <h3>Тайминг на час</h3>
+      <p style="max-width:65ch">Четыре клиента по 12 минут: 7 минут вопросы, 2 минуты разбор, 3 минуты резюме команд. Остаток времени на общий вывод: какие вопросы сработали и какие берём в завтрашние звонки.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+const LAYERS=[
+  {k:'sit',t:'Ситуация',p:1},
+  {k:'prob',t:'Проблема',p:2},
+  {k:'imp',t:'Последствия',p:3,need:'prob'},
+  {k:'need',t:'Истинный мотив',p:4,need:'prob'},
+  {k:'obj',t:'Скрытое возражение',p:3}
+];
+const WIDTHS=['66%','74%','82%','90%','98%'];
+const CLIENTS=[
+ {id:'aigerim',name:'Айгерим',meta:'29 лет, Астана. Пришла с рекламы в Instagram.',
+  tone:'Вежливая, но неуверенная. Часто отвечает «ну, не знаю». Раскрывается, если с ней говорят спокойно и без давления.',
+  open:'Здравствуйте, я видела вашу рекламу. Сколько стоит курс?',
+  L:{sit:['Я в декрете второй год, у меня двое детей. Свободна часа два-три в день, пока младший спит. ИП у меня нет.','Расскажите, чем вы сейчас занимаетесь? Сколько времени в день можете уделять?'],
+     prob:['Живём на одну зарплату мужа, хватает впритык. На работу выйти не могу: место в садике дадут только через год.','Что вас сейчас не устраивает в ситуации с доходом?'],
+     imp:['Отложить ничего не получается, любая крупная покупка превращается в стресс. И мне неприятно каждый раз просить деньги у мужа.','Как это сказывается на вас и на семье? Что будет, если ещё год ничего не менять?'],
+     need:['Хочу свой доход из дома, чтобы не зависеть от мужа и не бросать детей ради офиса.','Что для вас изменится, когда появится свой доход? Каким вы видите результат через полгода?'],
+     obj:['Я уже покупала один онлайн-курс и бросила на второй неделе: осталась одна с уроками, спросить было некого. Боюсь опять выбросить деньги, а муж скажет «я же говорил».','Был ли у вас опыт онлайн-обучения? Что тогда пошло не так? Что может остановить вас сейчас?']}},
+ {id:'daniyar',name:'Данияр',meta:'34 года, строитель, работает с бригадой. Пришёл по совету знакомого.',
+  tone:'Самоуверенный, отвечает коротко, любит фразу «я и сам разберусь». Уважает конкретику, раздражается от общих слов.',
+  open:'Знакомый сказал, вы по тендерам учите. Я в принципе и сам разберусь, просто скажите, что у вас в программе.',
+  L:{sit:['У меня ИП и бригада из шести человек, делаем отделку и ремонт. Работаем на субподряде у генподрядчика.','Расскажите про ваше дело: чем занимаетесь, как сейчас получаете заказы?'],
+     prob:['Генподрядчик забирает себе основную маржу, а мне платит с задержкой в два-три месяца.','Что вас не устраивает в работе через генподрядчика?'],
+     imp:['Когда оплату задерживают, я плачу бригаде из своего кармана. В прошлом году из-за этого от меня ушли два хороших мастера.','Чем для вас оборачиваются эти задержки? Что вы на этом теряете?'],
+     need:['Хочу сам заходить в тендеры и работать с заказчиком напрямую, без посредника, который сидит на моей марже.','Как выглядела бы идеальная схема работы для вас?'],
+     obj:['Я уже пробовал подать заявку сам. Запутался в документах, заявку отклонили. Если честно, думаю, там всё давно поделено между своими.','Вы уже пробовали участвовать в тендерах? Как это было? Что вас смущает в госзакупках?']}},
+ {id:'erlan',name:'Ерлан',meta:'41 год, работает по найму. Заявку оставил вечером, днём трубку берёт неохотно.',
+  tone:'Уклончивый, старается быстрее закончить разговор. На давление отвечает «я подумаю». Оживает, когда речь заходит о детях.',
+  open:'Да, оставлял заявку. Сейчас не очень удобно, скиньте информацию на WhatsApp, я подумаю.',
+  L:{sit:['Работаю по найму, пять через два. Вечера и выходные свободны. ИП нет, в закупках ничего не понимаю.','Чем вы сейчас занимаетесь? Что вас заинтересовало, когда оставляли заявку?'],
+     prob:['Зарплата третий год стоит на месте. Пробовал таксовать по вечерам, но это выматывает, а денег выходит мало.','Что вас не устраивает в нынешнем доходе? Что уже пробовали?'],
+     imp:['Сын через год поступает. Если не пройдёт на грант, платное обучение я не потяну.','Почему вам важно решить это именно сейчас? Что будет, если всё останется как есть?'],
+     need:['Хочу дело, которое можно вести по вечерам, а со временем совсем уйти с найма.','Каким вы видите свой доход и занятость через год?'],
+     obj:['Не верю, что без связей и без денег можно что-то выиграть. Мне же ещё товар закупать на свои, а свободных денег нет.','Что вас больше всего смущает в тендерах? Что должно быть, чтобы вы решились?']}},
+ {id:'asem',name:'Асем',meta:'37 лет, владелица небольшого швейного цеха.',
+  tone:'Деловая, торопится, перебивает. Не терпит общих слов. Смягчается, когда видит, что её бизнес поняли.',
+  open:'У меня мало времени. Чем вы отличаетесь от других курсов по тендерам?',
+  L:{sit:['У меня швейный цех, четыре швеи. Шьём форму и спецодежду на заказ, работаем через ТОО.','Чтобы ответить по делу, расскажите про ваш бизнес: что производите, кто ваши клиенты?'],
+     prob:['Заказы сезонные. Перед учебным годом завал, а потом цех по два-три месяца почти простаивает.','Как у вас с загрузкой в течение года? Что не устраивает в потоке заказов?'],
+     imp:['В простой плачу швеям из своих, иначе они уходят. Новых потом ищу и обучаю месяцами.','Во что вам обходится простой? Как он влияет на команду?'],
+     need:['Мне нужны стабильные заказы от школ и больниц на год вперёд, чтобы цех был загружен всегда.','Какой результат был бы для вас идеальным? Что должно измениться в заказах?'],
+     obj:['У меня нет времени сидеть на уроках. И я уже говорила с другой школой, там дешевле. Не понимаю, за что здесь платить больше.','С кем ещё вы нас сравниваете? Что для вас главное при выборе? Что может помешать пройти обучение?']}}
+];
+const KEY='iceberg-v1', DUR=420;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=s=>document.querySelector(s);
+
+let S={teams:[{name:'Команда 1',score:0},{name:'Команда 2',score:0}],turn:0,client:0,rounds:{}};
+try{const raw=localStorage.getItem(KEY); if(raw){const o=JSON.parse(raw); if(o&&Array.isArray(o.teams)&&o.teams.length>=2) S=o;}}catch(e){}
+let hist=[], left=DUR, running=false, tick=null, cardClient=0, cardShown=false, resetArmed=false;
+
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const round=id=>S.rounds[id]||(S.rounds[id]={opened:{},debrief:false,best:null});
+const cur=()=>CLIENTS[S.client];
+const push=()=>{hist.push(JSON.stringify(S)); if(hist.length>40) hist.shift()};
+const next=()=>{S.turn=(S.turn+1)%S.teams.length};
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+const openedCount=id=>Object.keys(round(id).opened).length;
+
+function renderChips(){
+  $('#clientChips').innerHTML=CLIENTS.map((c,i)=>`<button class="chip" data-act="client" data-i="${i}" aria-pressed="${i===S.client}">${c.name} <small>${openedCount(c.id)}/5</small></button>`).join('');
+  $('#cardChips').innerHTML=CLIENTS.map((c,i)=>`<button class="chip" data-act="card" data-i="${i}" aria-pressed="${i===cardClient}">${c.name}</button>`).join('');
+}
+function renderStage(){
+  const c=cur(), r=round(c.id);
+  let h=`<div class="sky"><div class="tip"><p class="eyebrow">Клиент ${S.client+1} из ${CLIENTS.length}</p><h2>${c.name}</h2><p class="meta">${c.meta}</p><blockquote>«${c.open}»</blockquote></div></div>
+  <div class="waterline"><span>ватерлиния · выше то, что клиент говорит сам</span></div><div class="sea">`;
+  LAYERS.forEach((L,i)=>{
+    const who=r.opened[L.k], open=who!==undefined, st=`style="--w:${WIDTHS[i]}"`;
+    if(open||r.debrief){
+      const team=open?(S.teams[who]?S.teams[who].name:'команда'):null;
+      h+=`<div class="layer ${open?'open':'missed'}" ${st}><span class="l-name">${L.t}</span><span class="l-pts">${open?'+'+L.p:L.p}</span>
+      <span class="l-tag">${open?'вскрыла: '+esc(team):'не вскрыли'}</span><span class="l-say">«${c.L[L.k][0]}»</span>
+      ${r.debrief?`<span class="l-ask"><b>Вопрос, который сюда ведёт:</b> ${c.L[L.k][1]}</span>`:''}</div>`;
+    }else{
+      const locked=L.need&&r.opened[L.need]===undefined;
+      h+=`<button class="layer covered ${locked?'locked':''}" ${st} data-act="open" data-k="${L.k}" ${locked?'aria-disabled="true"':''}>
+      <span class="l-name">${L.t}</span><span class="l-pts">+${L.p}</span><span class="l-sub">${locked?'откроется после «Проблемы»':'нажмите, когда клиент сказал «Вскрыто»'}</span></button>`;
+    }
+  });
+  $('#stage').innerHTML=h+'</div>';
+}
+function renderRail(){
+  const c=cur(), r=round(c.id), t=S.teams[S.turn];
+  let h='';
+  if(!r.debrief){
+    h+=`<div class="panel turn"><span class="label">Сейчас спрашивает</span><strong id="turnName">${esc(t.name)}</strong><p>Один открытый вопрос клиенту.</p></div>
+    <div class="panel"><span class="label">Время раунда</span><div class="timer ${left===0?'out':''}" id="timer">${fmt(left)}</div>
+      <div class="row"><button class="btn main" data-act="timer">${running?'Пауза':(left===0?'Время вышло':'Старт')}</button><button class="btn ghost" data-act="treset">Сброс</button></div></div>
+    <div class="panel"><span class="label">Итог вопроса</span>
+      <button class="btn" data-act="miss"><span>Мимо, ход дальше</span><span class="n">0</span></button>
+      <button class="btn pen" data-act="pen" data-n="1"><span>Закрытый вопрос</span><span class="n">−1</span></button>
+      <button class="btn pen" data-act="pen" data-n="2"><span>Продаёт вместо вопроса</span><span class="n">−2</span></button>
+      <p class="note">Попали в слой? Нажмите сам слой на айсберге.</p></div>`;
+  }else{
+    h+=`<div class="panel best"><span class="label">Лучшее резюме и предложение · +3</span><p class="note">Команды по 30 секунд пересказывают, что услышали. Клиент выбирает.</p>
+      ${S.teams.map((x,i)=>`<button class="btn" data-act="best" data-i="${i}" aria-pressed="${r.best===i}"><span>${esc(x.name)}</span><span class="n">+3</span></button>`).join('')}
+      ${S.client<CLIENTS.length-1?'<button class="btn main" data-act="nextclient">Следующий клиент</button>':''}</div>`;
+  }
+  h+=`<div class="panel"><span class="label">Счёт</span><div class="teams">${S.teams.map((x,i)=>`<div class="team ${i===S.turn&&!r.debrief?'on':''}"><span class="dot"></span><input id="team-${i}" data-i="${i}" value="${esc(x.name)}" maxlength="24" aria-label="Название команды ${i+1}"><output>${x.score}</output></div>`).join('')}</div>
+    <div class="row"><button class="btn ghost" data-act="addteam" ${S.teams.length>=4?'disabled':''}>+ команда</button><button class="btn ghost" data-act="delteam" ${S.teams.length<=2?'disabled':''}>− команда</button></div></div>
+  <div class="row">
+    <button class="btn ghost" data-act="undo" ${hist.length?'':'disabled'}>Отменить</button>
+    ${r.debrief?'<button class="btn ghost" data-act="undebrief">Вернуться к вопросам</button>':'<button class="btn main" data-act="debrief">Разбор</button>'}
+  </div>
+  <button class="btn ghost" data-act="reset">${resetArmed?'Точно обнулить всё? Нажмите ещё раз':'Новая игра'}</button>`;
+  $('#rail').innerHTML=h;
+}
+function renderCard(){
+  const c=CLIENTS[cardClient];
+  if(!cardShown){
+    $('#card').innerHTML=`<h2>Карточка только для того, кто играет клиента</h2><p style="max-width:65ch">Здесь написано всё, что команды должны вытащить вопросами. Откройте её на своём телефоне и убедитесь, что экран никто не видит.</p><button class="btn main" data-act="showcard">Я клиент, показать карточку: ${c.name}</button>`;
+    return;
+  }
+  $('#card').innerHTML=`<h2>Вы играете: ${c.name}</h2><p>${c.meta}</p>
+  <h3>Как себя вести</h3><p style="max-width:65ch">${c.tone}</p>
+  <ul><li>Отвечайте честно, но только на то, о чём спросили. Сами ничего не рассказывайте.</li>
+  <li>На закрытый вопрос отвечайте одним словом: «да», «нет», «не знаю».</li>
+  <li>«Последствия» и «Истинный мотив» раскрывайте только после того, как у вас спросили про проблему. Чужому человеку такое сразу не говорят.</li>
+  <li>Когда вопрос попал в слой, ответьте словами из карточки и скажите ведущему «Вскрыто» и название слоя.</li>
+  <li>Если вам начали рассказывать про курс, не задав вопрос, скажите: «Я подумаю».</li></ul>
+  <h3>Начните с фразы</h3><p class="quote">«${c.open}»</p>
+  ${LAYERS.map(L=>`<div class="card-layer"><div class="hd"><h3>${L.t}</h3><span>+${L.p}</span></div><p>«${c.L[L.k][0]}»</p><p class="hit">Засчитывайте, если спросили примерно так: ${c.L[L.k][1]}</p></div>`).join('')}
+  <button class="btn ghost" data-act="hidecard">Скрыть карточку</button>`;
+}
+function render(){renderChips();renderStage();renderRail();renderCard()}
+
+function stopTimer(){running=false; clearInterval(tick); tick=null}
+function startTimer(){
+  if(left===0) return; running=true;
+  tick=setInterval(()=>{left=Math.max(0,left-1); const el=$('#timer'); if(el){el.textContent=fmt(left); el.classList.toggle('out',left===0)} if(left===0){stopTimer(); renderRail()}},1000);
+}
+function setTab(t){
+  ['game','client','rules'].forEach(x=>{$('#view-'+x).hidden=x!==t; $('#tab-'+x).setAttribute('aria-selected',x===t)});
+  if(t!=='client'){cardShown=false; renderCard()}
+}
+
+document.addEventListener('click',e=>{
+  const tab=e.target.closest('[data-tab]'); if(tab){setTab(tab.dataset.tab); return}
+  const b=e.target.closest('[data-act]'); if(!b||b.disabled) return;
+  const a=b.dataset.act, c=cur(), r=round(c.id);
+  if(a!=='reset') resetArmed=false;
+  if(a==='client'){S.client=+b.dataset.i; stopTimer(); left=DUR}
+  else if(a==='card'){cardClient=+b.dataset.i; cardShown=false}
+  else if(a==='showcard'){cardShown=true}
+  else if(a==='hidecard'){cardShown=false}
+  else if(a==='open'){
+    const L=LAYERS.find(x=>x.k===b.dataset.k);
+    if(L.need&&r.opened[L.need]===undefined) return;
+    push(); r.opened[L.k]=S.turn; S.teams[S.turn].score+=L.p; next();
+  }
+  else if(a==='miss'){push(); next()}
+  else if(a==='pen'){push(); S.teams[S.turn].score-=+b.dataset.n; next()}
+  else if(a==='best'){
+    const i=+b.dataset.i; push();
+    if(r.best!==null&&S.teams[r.best]) S.teams[r.best].score-=3;
+    if(r.best===i) r.best=null; else {r.best=i; S.teams[i].score+=3}
+  }
+  else if(a==='debrief'){push(); r.debrief=true; stopTimer()}
+  else if(a==='undebrief'){push(); r.debrief=false}
+  else if(a==='nextclient'){S.client=Math.min(CLIENTS.length-1,S.client+1); stopTimer(); left=DUR; window.scrollTo({top:0})}
+  else if(a==='undo'){if(hist.length) S=JSON.parse(hist.pop())}
+  else if(a==='timer'){running?stopTimer():startTimer()}
+  else if(a==='treset'){stopTimer(); left=DUR}
+  else if(a==='addteam'){if(S.teams.length<4){push(); S.teams.push({name:'Команда '+(S.teams.length+1),score:0})}}
+  else if(a==='delteam'){
+    if(S.teams.length>2){push(); const gone=S.teams.length-1; S.teams.pop(); if(S.turn>=S.teams.length) S.turn=0;
+      Object.values(S.rounds).forEach(x=>{if(x.best===gone) x.best=null})}
+  }
+  else if(a==='reset'){
+    if(!resetArmed){resetArmed=true}
+    else{resetArmed=false; hist=[]; S={teams:S.teams.map(t=>({name:t.name,score:0})),turn:0,client:0,rounds:{}}; stopTimer(); left=DUR}
+  }
+  save(); render();
+});
+document.addEventListener('input',e=>{
+  const i=e.target.dataset&&e.target.dataset.i;
+  if(e.target.matches('.team input')){S.teams[+i].name=e.target.value||('Команда '+(+i+1)); save(); if(+i===S.turn){const el=$('#turnName'); if(el) el.textContent=S.teams[+i].name}}
+});
+document.addEventListener('change',e=>{if(e.target.matches('.team input')){renderStage()}});
+
+render();
+const h=(location.hash||'').slice(1); if(['client','rules'].includes(h)) setTab(h);
+</script>
+</body>
+</html>
